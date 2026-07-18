@@ -1,0 +1,9 @@
+node_modules
+client/node_modules
+client/dist
+workapp.db
+*.log
+.env
+.git
+.gitignore
+README.md

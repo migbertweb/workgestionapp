@@ -1,0 +1,26 @@
+services:
+  workapp:
+    build: .
+    image: workgestionapp:latest
+    container_name: workgestionapp
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - workapp_data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_PATH=/app/data/workapp.db
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASS=${ADMIN_PASS:-change-me}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/api/auth/me"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  workapp_data:

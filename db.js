@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, 'workapp.db');
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'workapp.db');
 
 let _db = null;
 let _persistTimer = null;
