@@ -204,7 +204,10 @@ export async function downloadInvoicePDF(invoice, project, lineItems = []) {
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...T.gray);
-  doc.text('Transferencia bancaria · Pago móvil · Zelle', M, y + 6);
+  doc.text('Transferencia bancaria · Pago móvil · Revolut', M, y + 6);
+  doc.setFontSize(7);
+  doc.text('Banco: Mercado Pago / Nubank · Revolut: @migbertyanez', M, y + 11);
+  doc.text('Plazo: 15 días desde la emisión. Consultar por transferencia internacional.', M, y + 16);
   // Right: Notes (compact)
   if (invoice.notes) {
     doc.setTextColor(...T.ink);
