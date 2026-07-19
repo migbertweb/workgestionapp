@@ -7,15 +7,43 @@ const money = (n) => new Intl.NumberFormat('es-BR', { style: 'currency', currenc
 const T = { teal: [0, 168, 150], ink: [51, 51, 51], gray: [102, 102, 102], light: [224, 224, 224], white: [255, 255, 255], red: [220, 53, 69], green: [0, 168, 150] };
 const M = 20; // page margin
 
-function drawHeader(doc) {
-  // Logo: "M" in teal rounded square (matching favicon)
+let _logoDataUrl = null;
+
+async function loadLogo() {
+  if (_logoDataUrl) return _logoDataUrl;
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = reject;
+      i.src = '/logo.png';
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    _logoDataUrl = canvas.toDataURL('image/png');
+    return _logoDataUrl;
+  } catch {
+    return null; // fallback: draw text logo below
+  }
+}
+
+async function drawHeader(doc) {
+  const logoUrl = await loadLogo();
   const lx = M, ly = 14, ls = 16;
-  doc.setFillColor(...T.teal);
-  doc.roundedRect(lx, ly, ls, ls, 3, 3, 'F');
-  doc.setTextColor(...T.white);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('M', lx + ls / 2, ly + ls / 2 + 5, { align: 'center' });
+
+  if (logoUrl) {
+    doc.addImage(logoUrl, 'PNG', lx, ly, ls, ls);
+  } else {
+    // Fallback: "M" in teal square
+    doc.setFillColor(...T.teal);
+    doc.roundedRect(lx, ly, ls, ls, 3, 3, 'F');
+    doc.setTextColor(...T.white);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('M', lx + ls / 2, ly + ls / 2 + 5, { align: 'center' });
+  }
   // Company name
   doc.setTextColor(...T.ink);
   doc.setFontSize(15);
@@ -92,11 +120,11 @@ function clientSection(doc, title, rows, startY) {
 }
 
 // ─── Invoice PDF ────────────────────────────────────────────────
-export function downloadInvoicePDF(invoice, project, lineItems = []) {
+export async function downloadInvoicePDF(invoice, project, lineItems = []) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const page = 1;
 
-  drawHeader(doc);
+  await drawHeader(doc);
 
   // Right side: INVOICE title + number
   const rx = 190;
@@ -195,11 +223,11 @@ export function downloadInvoicePDF(invoice, project, lineItems = []) {
 }
 
 // ─── Budget PDF ─────────────────────────────────────────────────
-export function downloadBudgetPDF(project, lineItems, stages, bufferAmount) {
+export async function downloadBudgetPDF(project, lineItems, stages, bufferAmount) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const page = 1;
 
-  drawHeader(doc);
+  await drawHeader(doc);
 
   const rx = 190;
   doc.setTextColor(...T.teal);
