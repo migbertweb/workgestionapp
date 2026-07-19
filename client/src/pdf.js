@@ -3,8 +3,8 @@ import autoTable from 'jspdf-autotable';
 
 const money = (n) => new Intl.NumberFormat('es-BR', { style: 'currency', currency: 'USD' }).format(n || 0);
 
-// Palette: teal corporate
-const T = { teal: [0, 168, 150], ink: [51, 51, 51], gray: [102, 102, 102], light: [224, 224, 224], white: [255, 255, 255], red: [220, 53, 69], green: [0, 168, 150] };
+// Palette: teal corporate (hex strings for jsPDF compat)
+const T = { teal: '#00a896', ink: '#333333', gray: '#666666', light: '#e0e0e0', white: '#ffffff', red: '#dc3545', green: '#00a896' };
 const M = 20; // page margin
 
 let _logoDataUrl = null;
