@@ -76,12 +76,12 @@ function drawFooter(doc, page) {
   doc.setFont('helvetica', 'normal');
   doc.text('Firma', M, fy + 5);
 
-  // Decorative shapes (right)
-  const fx = 168;
+  // Decorative shapes (right) — smaller, offset from text
+  const fx = 172;
   doc.setFillColor(...T.teal);
-  doc.triangle(fx + 10, fy + 16, fx + 30, fy, fx + 30, fy + 16, 'F');
+  doc.triangle(fx + 5, fy + 8, fx + 18, fy, fx + 18, fy + 8, 'F');
   doc.setFillColor(30, 30, 30);
-  doc.triangle(fx + 18, fy + 12, fx + 30, fy + 2, fx + 30, fy + 12, 'F');
+  doc.triangle(fx + 12, fy + 6, fx + 18, fy + 2, fx + 18, fy + 6, 'F');
   // Thank you
   doc.setTextColor(...T.teal);
   doc.setFontSize(9);
@@ -193,11 +193,17 @@ export async function downloadInvoicePDF(invoice, project, lineItems = []) {
       y += isLast ? 10 : 6;
     });
   } else {
-    doc.setFontSize(12);
+    y += 10;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(...T.gray);
+    doc.text('Sin desglose de ítems — agregá line items en la pestaña Presupuesto del proyecto.', M, y);
+    y += 14;
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...T.ink);
-    doc.text(`Total: ${money(invoice.amount)}`, M, y + 4);
-    y += 20;
+    doc.text(`Total: ${money(invoice.amount)}`, M, y);
+    y += 24;
   }
 
   // Payment + notes (compact, two-column)
