@@ -4,6 +4,7 @@ import { Plus, FolderKanban, Clock, DollarSign, TrendingUp, AlertCircle } from '
 import { api } from '../api.js';
 import Modal from '../components/Modal.jsx';
 import ProjectForm from '../components/ProjectForm.jsx';
+import ActivityFeed from '../components/ActivityFeed.jsx';
 
 const money = (n) => new Intl.NumberFormat('es-BR', { style: 'currency', currency: 'USD' }).format(n || 0);
 
@@ -153,6 +154,8 @@ export default function Dashboard() {
           })}
         </div>
       )}
+
+      <ActivityFeed compact />
 
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Nuevo Proyecto">
         <ProjectForm onSubmit={handleCreate} onCancel={() => setShowModal(false)} />

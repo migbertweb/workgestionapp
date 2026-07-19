@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { db, bootstrap } from './db.js';
 import { seedAdmin, requireAuth, authRoutes } from './auth.js';
 import { notify } from './notify.js';
+import { activity } from './activity.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -71,6 +72,7 @@ app.post('/api/projects', async (req, res) => {
   });
   const newProject = db.prepare(`SELECT * FROM projects WHERE id = ?`).get(id);
   res.status(201).json(newProject);
+  activity.log({ project_id: id, username: req.user?.username, action: 'create', entity: 'project', entity_id: id, name });
   await notify.projectCreated(newProject);
 });
 
@@ -156,7 +158,9 @@ app.post('/api/tasks', (req, res) => {
   const now = new Date().toISOString();
   const result = db.prepare(`INSERT INTO tasks (project_id, stage_id, title, description, status, priority, position, estimated_hours, rate, category, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
     .run(project_id, stage_id || null, title, description || null, status || 'todo', priority || 'medium', position || 0, estimated_hours || 0, rate || 0, category || 'dev', now, now);
-  res.status(201).json(db.prepare(`SELECT * FROM tasks WHERE id=?`).get(result.lastInsertRowid));
+  const newTask = db.prepare(`SELECT * FROM tasks WHERE id=?`).get(result.lastInsertRowid);
+  res.status(201).json(newTask);
+  activity.log({ project_id, username: req.user?.username, action: 'create', entity: 'task', entity_id: newTask.id, name: title });
 });
 
 app.put('/api/tasks/:id', async (req, res) => {
@@ -171,6 +175,7 @@ app.put('/api/tasks/:id', async (req, res) => {
   if (status === 'done' && old.status !== 'done') {
     const project = db.prepare(`SELECT name FROM projects WHERE id=?`).get(updated.project_id);
     await notify.taskCompleted(updated, project?.name || 'Desconocido');
+    activity.log({ project_id: updated.project_id, username: req.user?.username, action: 'complete', entity: 'task', entity_id: updated.id, name: updated.title });
   }
 });
 
@@ -372,6 +377,18 @@ app.get('/api/analytics', (req, res) => {
     hoursByProject, tasksByStatus,
     revenueTimeline, costByCategory
   });
+});
+
+// ─── Activity log ────────────────────────────────────────────────
+app.get('/api/activity', (req, res) => {
+  const limit = parseInt(req.query.limit) || 30;
+  const rows = db.prepare(`SELECT a.*, p.name as project_name FROM activity_log a LEFT JOIN projects p ON p.id = a.project_id ORDER BY a.id DESC LIMIT ?`).all(limit);
+  res.json(rows);
+});
+
+app.get('/api/projects/:id/activity', (req, res) => {
+  const rows = db.prepare(`SELECT a.*, p.name as project_name FROM activity_log a LEFT JOIN projects p ON p.id = a.project_id WHERE a.project_id = ? ORDER BY a.id DESC LIMIT 20`).all(req.params.id);
+  res.json(rows);
 });
 
 // SPA fallback

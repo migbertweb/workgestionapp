@@ -7,6 +7,7 @@ import {
 } from '@dnd-kit/core';
 import { api } from '../api.js';
 import Modal from '../components/Modal.jsx';
+import ActivityFeed from '../components/ActivityFeed.jsx';
 
 const money = (n) => new Intl.NumberFormat('es-BR', { style: 'currency', currency: 'USD' }).format(n || 0);
 
@@ -276,6 +277,7 @@ export default function ProjectDetail() {
 
       {/* Overview */}
       {tab === 'overview' && (
+        <>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div className="card">
             <h3 style={{ marginTop: 0, fontSize: 16 }}>Etapas del Proyecto</h3>
@@ -315,6 +317,8 @@ export default function ProjectDetail() {
             </ul>
           </div>
         </div>
+        <ActivityFeed projectId={Number(id)} />
+        </>
       )}
 
       {/* Kanban */}
