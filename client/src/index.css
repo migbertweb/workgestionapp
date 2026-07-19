@@ -93,7 +93,7 @@ body {
 }
 .btn-danger:hover { opacity: 0.85; }
 
-.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-sm { padding: 8px 14px; font-size: 12px; min-height: 44px; }
 
 .input {
   background: var(--bg);
