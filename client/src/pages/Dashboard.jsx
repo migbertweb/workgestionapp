@@ -134,14 +134,14 @@ export default function Dashboard() {
                     <span>{p.done_stages || 0}/{p.total_stages || 0}</span>
                   </div>
                   <div className="progress-bar" style={{ marginBottom: 10 }}>
-                    <div className="progress-fill" style={{ width: `${stagePct}%` }} />
+                    <div className="progress-fill" style={{ '--pct': stagePct / 100 }} />
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
                     <span style={{ color: 'var(--muted)' }}>Tasks</span>
                     <span>{p.done_tasks || 0}/{p.total_tasks || 0}</span>
                   </div>
                   <div className="progress-bar" style={{ marginBottom: 12 }}>
-                    <div className="progress-fill" style={{ width: `${taskPct}%`, background: 'var(--success)' }} />
+                    <div className="progress-fill" style={{ '--pct': taskPct / 100, background: 'var(--success)' }} />
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: 700, fontSize: 16 }}>{money(p.budget)}</span>

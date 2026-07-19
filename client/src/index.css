@@ -264,7 +264,9 @@ select.input {
 .progress-fill {
   height: 100%;
   background: var(--accent);
-  transition: width 0.3s;
+  transform-origin: left;
+  transform: scaleX(var(--pct, 0));
+  transition: transform 0.3s;
 }
 
 @keyframes slideIn {
@@ -298,4 +300,13 @@ select.input {
 
   /* Kanban scroll */
   .kanban-col { min-width: 220px; width: 220px; max-height: 60vh; }
+}
+
+/* Accessibility: respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
