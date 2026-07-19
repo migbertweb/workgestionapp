@@ -203,7 +203,7 @@ export function downloadBudgetPDF(project, lineItems, stages, bufferAmount) {
 
   const rx = 190;
   doc.setTextColor(...T.teal);
-  doc.setFontSize(24);
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
   doc.text('PRESUPUESTO', rx, 50, { align: 'right' });
   doc.setFontSize(9);
