@@ -8,6 +8,8 @@ import {
 import { api } from '../api.js';
 import Modal from '../components/Modal.jsx';
 import ActivityFeed from '../components/ActivityFeed.jsx';
+import FileUpload from '../components/FileUpload.jsx';
+import { downloadBudgetPDF } from '../pdf.js';
 
 const money = (n) => new Intl.NumberFormat('es-BR', { style: 'currency', currency: 'USD' }).format(n || 0);
 
@@ -318,6 +320,7 @@ export default function ProjectDetail() {
           </div>
         </div>
         <ActivityFeed projectId={Number(id)} />
+        <FileUpload projectId={Number(id)} />
         </>
       )}
 
@@ -387,8 +390,15 @@ export default function ProjectDetail() {
 
       {/* Budget tab */}
       {tab === 'budget' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+            <button className="btn btn-primary" onClick={() => downloadBudgetPDF(project, lineItems, stages, bufferAmount)}>
+              📄 Descargar PDF
+            </button>
+          </div>
         <div className="card">
           <BudgetTab projectId={Number(id)} lineItems={lineItems} stages={stages} onReload={load} />
+        </div>
         </div>
       )}
 

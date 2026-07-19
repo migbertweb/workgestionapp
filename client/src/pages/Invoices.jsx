@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, FileText } from 'lucide-react';
+import { Plus, Trash2, Edit2, FileText, Download } from 'lucide-react';
 import { api } from '../api.js';
 import Modal from '../components/Modal.jsx';
+import { downloadInvoicePDF } from '../pdf.js';
 
 const money = (n) => new Intl.NumberFormat('es-BR', { style: 'currency', currency: 'USD' }).format(n || 0);
 
@@ -90,6 +91,9 @@ export default function Invoices() {
                     <td style={{ padding: '8px', fontSize: 13 }}>{inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '—'}</td>
                     <td style={{ padding: '8px' }}>
                       <div style={{ display: 'flex', gap: 4 }}>
+                        <button className="btn btn-secondary btn-sm" onClick={() => downloadInvoicePDF(inv, { name: inv.project_name, client: inv.client })} title="Descargar PDF">
+                          <Download size={14} />
+                        </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setEditInv(inv)}><Edit2 size={14} /></button>
                         <button className="btn btn-danger btn-sm" onClick={() => handleDelete(inv.id)}><Trash2 size={14} /></button>
                       </div>

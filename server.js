@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import fs from 'fs';
+import multer from 'multer';
 import { fileURLToPath } from 'url';
 import { db, bootstrap } from './db.js';
 import { seedAdmin, requireAuth, authRoutes } from './auth.js';
@@ -10,6 +12,10 @@ import { activity } from './activity.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'data', 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+const upload = multer({ dest: UPLOAD_DIR, limits: { fileSize: 10 * 1024 * 1024 } });
 
 app.use(cors());
 app.use(cookieParser());
@@ -389,6 +395,39 @@ app.get('/api/activity', (req, res) => {
 app.get('/api/projects/:id/activity', (req, res) => {
   const rows = db.prepare(`SELECT a.*, p.name as project_name FROM activity_log a LEFT JOIN projects p ON p.id = a.project_id WHERE a.project_id = ? ORDER BY a.id DESC LIMIT 20`).all(req.params.id);
   res.json(rows);
+});
+
+// ─── File uploads ────────────────────────────────────────────────
+app.get('/api/attachments/:projectId', (req, res) => {
+  const rows = db.prepare(`SELECT id, project_id, filename, original_name, size, mime_type, created_at FROM attachments WHERE project_id=? ORDER BY id DESC`).all(req.params.projectId);
+  res.json(rows);
+});
+
+app.post('/api/upload/:projectId', upload.single('file'), (req, res) => {
+  const { projectId } = req.params;
+  if (!req.file) return res.status(400).json({ message: 'No se recibió archivo' });
+  const { filename, originalname, size, mimetype, path: filePath } = req.file;
+  const now = new Date().toISOString();
+  db.prepare(`INSERT INTO attachments (project_id, filename, original_name, size, mime_type, path, created_at) VALUES (?,?,?,?,?,?,?)`)
+    .run(Number(projectId), filename, originalname, size, mimetype, filePath, now);
+  res.status(201).json({ ok: true, filename: originalname, size });
+});
+
+app.get('/api/attachments/download/:id', (req, res) => {
+  const att = db.prepare(`SELECT * FROM attachments WHERE id=?`).get(req.params.id);
+  if (!att) return res.status(404).json({ message: 'No encontrado' });
+  res.setHeader('Content-Disposition', `attachment; filename="${att.original_name}"`);
+  res.setHeader('Content-Type', att.mime_type || 'application/octet-stream');
+  fs.createReadStream(att.path).pipe(res);
+});
+
+app.delete('/api/attachments/:id', (req, res) => {
+  const att = db.prepare(`SELECT * FROM attachments WHERE id=?`).get(req.params.id);
+  if (att) {
+    try { fs.unlinkSync(att.path); } catch {}
+    db.prepare(`DELETE FROM attachments WHERE id=?`).run(req.params.id);
+  }
+  res.json({ ok: true });
 });
 
 // SPA fallback

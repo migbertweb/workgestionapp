@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, FolderKanban, Clock, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { Plus, FolderKanban, Clock, DollarSign, TrendingUp, AlertCircle, Settings } from 'lucide-react';
 import { api } from '../api.js';
 import Modal from '../components/Modal.jsx';
 import ProjectForm from '../components/ProjectForm.jsx';
@@ -13,6 +13,23 @@ export default function Dashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [widgetMenu, setWidgetMenu] = useState(false);
+
+  // Widget visibility from localStorage
+  const [widgets, setWidgets] = useState(() => {
+    try {
+      const saved = localStorage.getItem('workapp-widgets');
+      return saved ? JSON.parse(saved) : { projects: true, budget: true, hours: true, revenue: true };
+    } catch {
+      return { projects: true, budget: true, hours: true, revenue: true };
+    }
+  });
+
+  const toggleWidget = (key) => {
+    const next = { ...widgets, [key]: !widgets[key] };
+    setWidgets(next);
+    localStorage.setItem('workapp-widgets', JSON.stringify(next));
+  };
 
   const [error, setError] = useState('');
 
@@ -61,13 +78,41 @@ export default function Dashboard() {
           <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>Dashboard</h1>
           <p style={{ color: 'var(--muted)', margin: '4px 0 0' }}>Resumen general de tu actividad freelance</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={18} /> Nuevo Proyecto
-        </button>
+        <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
+          <div style={{ position: 'relative' }}>
+            <button className="btn btn-secondary" onClick={() => setWidgetMenu(!widgetMenu)} title="Configurar widgets">
+              <Settings size={18} />
+            </button>
+            {widgetMenu && (
+              <div style={{
+                position: 'absolute', right: 0, top: 40, background: 'var(--surface)',
+                border: '1px solid var(--border)', borderRadius: 10, padding: 12,
+                zIndex: 50, minWidth: 200, boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+              }}>
+                <p style={{ fontSize: 11, color: 'var(--muted)', margin: '0 0 8px', fontWeight: 600 }}>KPIs VISIBLES</p>
+                {[
+                  { key: 'projects', label: 'Proyectos Activos' },
+                  { key: 'budget', label: 'Presupuesto Total' },
+                  { key: 'hours', label: 'Horas Logueadas' },
+                  { key: 'revenue', label: 'Ingresos' },
+                ].map(w => (
+                  <label key={w.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: 'pointer', fontSize: 13 }}>
+                    <input type="checkbox" checked={widgets[w.key]} onChange={() => toggleWidget(w.key)} />
+                    {w.label}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+            <Plus size={18} /> Nuevo Proyecto
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 28 }}>
+        {widgets.projects && (
         <div className="stat-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted)' }}>
             <FolderKanban size={18} /> <span className="stat-label">Proyectos Activos</span>
@@ -75,6 +120,8 @@ export default function Dashboard() {
           <div className="stat-value">{activeProjects.length}</div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{projects.length} totales</div>
         </div>
+        )}
+        {widgets.budget && (
         <div className="stat-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted)' }}>
             <DollarSign size={18} /> <span className="stat-label">Presupuesto Total</span>
@@ -82,6 +129,8 @@ export default function Dashboard() {
           <div className="stat-value">{money(totalBudget)}</div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>Suma de todos los proyectos</div>
         </div>
+        )}
+        {widgets.hours && (
         <div className="stat-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted)' }}>
             <Clock size={18} /> <span className="stat-label">Horas Logueadas</span>
@@ -89,6 +138,8 @@ export default function Dashboard() {
           <div className="stat-value">{totalHours.toFixed(1)}h</div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>Tiempo total registrado</div>
         </div>
+        )}
+        {widgets.revenue && (
         <div className="stat-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted)' }}>
             <TrendingUp size={18} /> <span className="stat-label">Ingresos</span>
@@ -96,6 +147,7 @@ export default function Dashboard() {
           <div className="stat-value">{money(totalRevenue)}</div>
           <div style={{ fontSize: 12, color: 'var(--warning)' }}>{money(pendingRevenue)} pendiente</div>
         </div>
+        )}
       </div>
 
       {/* Projects grid */}

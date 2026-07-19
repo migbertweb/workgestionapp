@@ -114,6 +114,16 @@ CREATE TABLE IF NOT EXISTS activity_log (
   details TEXT,
   created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS attachments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER NOT NULL,
+  filename TEXT NOT NULL,
+  original_name TEXT NOT NULL,
+  size INTEGER DEFAULT 0,
+  mime_type TEXT,
+  path TEXT NOT NULL,
+  created_at TEXT
+);
 `;
 
 function persist() {

@@ -85,4 +85,14 @@ export const api = {
   // Activity
   getActivity: (limit) => request(`/activity?limit=${limit || 30}`),
   getProjectActivity: (projectId) => request(`/projects/${projectId}/activity`),
+
+  // Attachments
+  getAttachments: (projectId) => request(`/attachments/${projectId}`),
+  uploadFile: (projectId, file) => {
+    const form = new FormData();
+    form.append('file', file);
+    const token = localStorage.getItem('workapp_token');
+    return fetch(`/api/upload/${projectId}`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: 'include', body: form }).then(r => r.json());
+  },
+  deleteAttachment: (id) => request(`/attachments/${id}`, { method: 'DELETE' }),
 };
