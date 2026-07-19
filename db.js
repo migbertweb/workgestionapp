@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'workapp.db');
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'workapp.db');
 
 let _db = null;
 let _persistTimer = null;
@@ -178,6 +178,10 @@ export const db = {
 };
 
 export async function bootstrap() {
+  // Ensure data directory exists (needed when volume is mounted)
+  const dataDir = path.dirname(DB_PATH);
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
   const SQL = await initSqlJs();
   if (fs.existsSync(DB_PATH)) {
     _db = new SQL.Database(fs.readFileSync(DB_PATH));
