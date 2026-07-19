@@ -203,14 +203,16 @@ export function downloadBudgetPDF(project, lineItems, stages, bufferAmount) {
 
   const rx = 190;
   doc.setTextColor(...T.teal);
-  doc.setFontSize(20);
+  doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
-  doc.text('PRESUPUESTO', rx, 50, { align: 'right' });
-  doc.setFontSize(9);
+  doc.text('PRESUPUESTO', rx, 48, { align: 'right' });
+  doc.setFontSize(12);
+  doc.setTextColor(...T.ink);
+  doc.text(project?.name || '—', rx, 56, { align: 'right' });
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...T.gray);
-  doc.text(`Proyecto: ${project?.name || '—'}`, rx, 57, { align: 'right' });
-  doc.text(`Fecha: ${new Date().toLocaleDateString('es-BR')}`, rx, 62, { align: 'right' });
+  doc.text(`Fecha: ${new Date().toLocaleDateString('es-BR')}`, rx, 63, { align: 'right' });
 
   // Client info
   let y = clientSection(doc, 'PREPARADO PARA', [
