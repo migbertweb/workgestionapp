@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const money = (n) => new Intl.NumberFormat('es-BR', { style: 'currency', currency: 'USD' }).format(n || 0);
 
@@ -133,7 +133,7 @@ export function downloadInvoicePDF(invoice, project, lineItems = []) {
       { content: money(i.amount), styles: { halign: 'right' } },
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: y,
       head: [['No', 'Descripción', 'Precio', 'Cant (h)', 'Total']],
       body,
@@ -239,7 +239,7 @@ export function downloadBudgetPDF(project, lineItems, stages, bufferAmount) {
       s.name,
       s.status === 'done' ? 'Completada' : s.status === 'progress' ? 'En progreso' : s.status === 'review' ? 'Revisión' : 'Pendiente',
     ]);
-    doc.autoTable({
+    autoTable(doc, {
       startY: y,
       head: [['No', 'Etapa', 'Estado']],
       body: stageBody,
@@ -266,7 +266,7 @@ export function downloadBudgetPDF(project, lineItems, stages, bufferAmount) {
       { content: `${i.hours || 0}`, styles: { halign: 'center' } },
       { content: money(i.amount), styles: { halign: 'right' } },
     ]);
-    doc.autoTable({
+    autoTable(doc, {
       startY: y,
       head: [['No', 'Descripción', 'Precio', 'Cant (h)', 'Total']],
       body,
