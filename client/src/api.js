@@ -32,6 +32,7 @@ export const api = {
   createProject: (data) => request('/projects', { method: 'POST', body: JSON.stringify(data) }),
   updateProject: (id, data) => request(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteProject: (id) => request(`/projects/${id}`, { method: 'DELETE' }),
+  cloneProject: (id, include_line_items) => request(`/projects/${id}/clone`, { method: 'POST', body: JSON.stringify({ include_line_items }) }),
 
   // Stages
   getStages: (projectId) => request(`/stages/${projectId}`),

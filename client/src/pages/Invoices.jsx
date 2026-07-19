@@ -50,9 +50,12 @@ export default function Invoices() {
           <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>Facturas</h1>
           <p style={{ color: 'var(--muted)', margin: '4px 0 0' }}>{money(total)} cobrado · {money(pending)} pendiente</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={18} /> Nueva Factura
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-secondary" onClick={() => window.open('/api/invoices/export/csv')}>📥 CSV</button>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+            <Plus size={18} /> Nueva Factura
+          </button>
+        </div>
       </div>
 
       {invoices.length === 0 ? (

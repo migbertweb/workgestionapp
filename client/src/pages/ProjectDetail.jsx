@@ -339,6 +339,10 @@ export default function ProjectDetail() {
 
       {/* Tasklist */}
       {tab === 'tasks' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+            <button className="btn btn-secondary btn-sm" onClick={() => window.open(`/api/projects/${id}/tasks/export/csv`)}>📥 CSV</button>
+          </div>
         <div className="card">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -373,6 +377,7 @@ export default function ProjectDetail() {
               )}
             </tbody>
           </table>
+        </div>
         </div>
       )}
 
