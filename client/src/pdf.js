@@ -98,23 +98,23 @@ function drawFooter(doc, page) {
 function clientSection(doc, title, rows, startY) {
   let y = startY;
   doc.setTextColor(T.gray);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.text(title, M, y);
-  y += 6;
+  y += 2;
   rows.forEach(([label, value]) => {
     if (label) {
       doc.setTextColor(T.gray);
-      doc.setFontSize(7);
+      doc.setFontSize(6);
       doc.setFont('helvetica', 'normal');
       doc.text(label, M, y);
-      y += 4;
+      y += 3;
     }
     doc.setTextColor(T.ink);
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont('helvetica', value === rows[0][1] ? 'bold' : 'normal');
     doc.text(value || '—', M, y);
-    y += 7;
+    y += 5;
   });
   return y;
 }
@@ -150,8 +150,8 @@ export async function downloadInvoicePDF(invoice, project, lineItems = []) {
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(T.teal);
-  doc.text(`Estado: ${statusLabels[invoice.status] || invoice.status}`, M, y + 4);
-  y += 14;
+  doc.text(`Estado: ${statusLabels[invoice.status] || invoice.status}`, M, y + 3);
+  y += 10;
 
   // Items table
   if (lineItems.length > 0) {
@@ -185,7 +185,7 @@ export async function downloadInvoicePDF(invoice, project, lineItems = []) {
       foot: footRows,
       theme: 'plain',
       margin: { left: M, right: M },
-      styles: { fontSize: 8, cellPadding: 4, textColor: T.ink },
+      styles: { fontSize: 7, cellPadding: 3, textColor: T.ink },
       headStyles: { textColor: T.teal, fontStyle: 'bold', fillColor: T.white },
       bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
       footStyles: { fillColor: T.white, lineWidth: 0 },
@@ -263,15 +263,15 @@ export async function downloadBudgetPDF(project, lineItems, stages, bufferAmount
     ['Moneda', project?.currency || 'USD'],
     ['Deadline', project?.deadline || 'No definido'],
   ], 46);
-  y += 4;
+  y += 2;
 
   // Stages
   if (stages && stages.length > 0) {
     doc.setTextColor(T.teal);
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text('Etapas', M, y);
-    y += 7;
+    y += 5;
     const stageBody = stages.map((s, i) => [
       String(i + 1),
       s.name,
@@ -283,20 +283,20 @@ export async function downloadBudgetPDF(project, lineItems, stages, bufferAmount
       body: stageBody,
       theme: 'plain',
       margin: { left: M, right: M },
-      styles: { fontSize: 8, cellPadding: 4, textColor: T.ink },
+      styles: { fontSize: 7, cellPadding: 3, textColor: T.ink },
       headStyles: { textColor: T.teal, fontStyle: 'bold', fillColor: T.white },
       bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
     });
-    y = (doc.lastAutoTable?.finalY || y + 20) + 10;
+    y = (doc.lastAutoTable?.finalY || y + 20) + 6;
   }
 
   // Line items
   if (lineItems.length > 0) {
     doc.setTextColor(T.teal);
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text('Desglose de costos', M, y);
-    y += 7;
+    y += 5;
     const body = lineItems.map((i, idx) => [
       String(idx + 1),
       i.description || '—',
@@ -310,11 +310,11 @@ export async function downloadBudgetPDF(project, lineItems, stages, bufferAmount
       body,
       theme: 'plain',
       margin: { left: M, right: M },
-      styles: { fontSize: 8, cellPadding: 4, textColor: T.ink },
+      styles: { fontSize: 7, cellPadding: 3, textColor: T.ink },
       headStyles: { textColor: T.teal, fontStyle: 'bold', fillColor: T.white },
       bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
     });
-    y = (doc.lastAutoTable?.finalY || y + 20) + 8;
+    y = (doc.lastAutoTable?.finalY || y + 20) + 6;
   }
 
   // Summary table
@@ -324,10 +324,10 @@ export async function downloadBudgetPDF(project, lineItems, stages, bufferAmount
   const margin = total - totalCost;
 
   doc.setTextColor(T.teal);
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.text('Resumen financiero', M, y);
-  y += 7;
+  y += 5;
 
   const summaryBody = [
     [{ content: 'Presupuesto base', styles: { fontStyle: 'bold' } },
@@ -349,7 +349,7 @@ export async function downloadBudgetPDF(project, lineItems, stages, bufferAmount
     body: summaryBody,
     theme: 'plain',
     margin: { left: M, right: M },
-    styles: { fontSize: 8, cellPadding: 4, textColor: T.ink },
+    styles: { fontSize: 7, cellPadding: 3, textColor: T.ink },
     bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
   });
   y = (doc.lastAutoTable?.finalY || y + 20) + 6;
