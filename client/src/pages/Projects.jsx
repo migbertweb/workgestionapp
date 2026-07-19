@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Copy } from 'lucide-react';
 import { api } from '../api.js';
 import Modal from '../components/Modal.jsx';
 import ProjectForm from '../components/ProjectForm.jsx';
+
+const BASE = '/api';
 
 const money = (n) => new Intl.NumberFormat('es-BR', { style: 'currency', currency: 'USD' }).format(n || 0);
 
@@ -51,6 +53,18 @@ export default function Projects() {
     load();
   };
 
+  const handleClone = async (id, includeLineItems) => {
+    if (!confirm(`¿Clonar proyecto${includeLineItems ? ' con line items' : ' (solo estructura)'}?`)) return;
+    try {
+      await api.cloneProject(id, includeLineItems);
+      load();
+    } catch (e) {
+      setError('Error clonando: ' + e.message);
+    }
+  };
+
+  const exportCSV = () => window.open(`${BASE}/projects/export/csv`);
+
   return (
     <div>
       {error && (
@@ -61,9 +75,12 @@ export default function Projects() {
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>Proyectos</h1>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={18} /> Nuevo Proyecto
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-secondary" onClick={exportCSV}>📥 CSV</button>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+            <Plus size={18} /> Nuevo Proyecto
+          </button>
+        </div>
       </div>
 
       {projects.length === 0 ? (
@@ -88,7 +105,7 @@ export default function Projects() {
                   <span>{p.done_stages || 0}/{p.total_stages || 0}</span>
                 </div>
                 <div className="progress-bar" style={{ marginBottom: 12 }}>
-                  <div className="progress-fill" style={{ width: `${stagePct}%` }} />
+                  <div className="progress-fill" style={{ '--pct': stagePct / 100 }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
@@ -96,6 +113,9 @@ export default function Projects() {
                     <div style={{ fontSize: 12, color: 'var(--muted)' }}>{(p.logged_hours || 0).toFixed(1)}h · {money(p.total_cost || 0)} cost</div>
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
+                    <button className="btn btn-secondary btn-sm" onClick={(e) => { e.stopPropagation(); handleClone(p.id, false); }} title="Clonar estructura">
+                      <Copy size={14} />
+                    </button>
                     <button className="btn btn-secondary btn-sm" onClick={(e) => { e.stopPropagation(); setEditProject(p); }}>
                       <Edit2 size={14} />
                     </button>

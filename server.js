@@ -87,6 +87,39 @@ app.delete('/api/projects/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// Clone project structure
+app.post('/api/projects/:id/clone', (req, res) => {
+  const src = db.prepare(`SELECT * FROM projects WHERE id=?`).get(req.params.id);
+  if (!src) return res.status(404).json({ message: 'Proyecto no encontrado' });
+  const { include_line_items } = req.body || {};
+  const now = new Date().toISOString();
+  const newName = `${src.name} (copia)`;
+  const result = db.prepare(`INSERT INTO projects (name, client, budget, buffer_percent, currency, deadline, description, status, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+    .run(newName, src.client, src.budget, src.buffer_percent, src.currency, null, src.description, 'active', now, now);
+  const newId = result.lastInsertRowid;
+  // Clone stages
+  const stages = db.prepare(`SELECT * FROM stages WHERE project_id=? ORDER BY position`).all(req.params.id);
+  const stmtStage = db.prepare(`INSERT INTO stages (project_id, name, status, position, updated_at) VALUES (?,?,?,?,?)`);
+  const stageMap = {}; // oldId → newId
+  stages.forEach(s => {
+    const r = stmtStage.run(newId, s.name, 'todo', s.position, now);
+    stageMap[s.id] = r.lastInsertRowid;
+  });
+  // Clone tasks (reset status to todo)
+  const tasks = db.prepare(`SELECT * FROM tasks WHERE project_id=?`).all(req.params.id);
+  const stmtTask = db.prepare(`INSERT INTO tasks (project_id, stage_id, title, description, status, priority, position, estimated_hours, rate, category, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`);
+  tasks.forEach(t => stmtTask.run(newId, t.stage_id ? (stageMap[t.stage_id] || null) : null, t.title, t.description, 'todo', t.priority, t.position, t.estimated_hours, t.rate, t.category, now, now));
+  // Clone line items if requested
+  if (include_line_items) {
+    const items = db.prepare(`SELECT * FROM line_items WHERE project_id=?`).all(req.params.id);
+    items.forEach(li => db.prepare(`INSERT INTO line_items (project_id, stage_id, description, hours, rate, amount, category) VALUES (?,?,?,?,?,?,?)`).run(newId, li.stage_id, li.description, li.hours, li.rate, li.amount, li.category));
+  }
+  // Clone rates
+  const rates = db.prepare(`SELECT * FROM project_rates WHERE project_id=?`).all(req.params.id);
+  rates.forEach(r => db.prepare(`INSERT INTO project_rates (project_id, role, hourly_rate) VALUES (?,?,?)`).run(newId, r.role, r.hourly_rate));
+  res.status(201).json(db.prepare(`SELECT * FROM projects WHERE id=?`).get(newId));
+});
+
 // Stages
 app.get('/api/stages/:projectId', (req, res) => {
   const stages = db.prepare(`SELECT * FROM stages WHERE project_id=? ORDER BY position`).all(req.params.projectId);
@@ -345,6 +378,42 @@ app.get('/api/analytics', (req, res) => {
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(clientBuild, 'index.html'));
+});
+
+// ─── CSV Exports ─────────────────────────────────────────────────
+function toCSV(columns, rows) {
+  const escape = v => v == null ? '' : `"${String(v).replace(/"/g, '""')}"`;
+  const header = columns.join(',');
+  const body = rows.map(r => columns.map(c => escape(r[c])).join(',')).join('\n');
+  return header + '\n' + body;
+}
+
+app.get('/api/projects/export/csv', (req, res) => {
+  const rows = db.prepare(`SELECT id, name, client, budget, buffer_percent, currency, deadline, status FROM projects ORDER BY id DESC`).all();
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=proyectos.csv');
+  res.send(toCSV(['id','name','client','budget','buffer_percent','currency','deadline','status'], rows));
+});
+
+app.get('/api/projects/:id/tasks/export/csv', (req, res) => {
+  const rows = db.prepare(`SELECT id, title, description, status, priority, estimated_hours, rate, category FROM tasks WHERE project_id=? ORDER BY id`).all(req.params.id);
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename=tareas-proyecto-${req.params.id}.csv`);
+  res.send(toCSV(['id','title','description','status','priority','estimated_hours','rate','category'], rows));
+});
+
+app.get('/api/time/export/csv', (req, res) => {
+  const rows = db.prepare(`SELECT t.id, p.name as project, t.description, t.hours, t.started_at, t.ended_at FROM time_entries t LEFT JOIN projects p ON p.id = t.project_id ORDER BY t.started_at DESC`).all();
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=tiempo.csv');
+  res.send(toCSV(['id','project','description','hours','started_at','ended_at'], rows));
+});
+
+app.get('/api/invoices/export/csv', (req, res) => {
+  const rows = db.prepare(`SELECT i.id, p.name as project, i.number, i.amount, i.status, i.due_date, i.paid_date FROM invoices i LEFT JOIN projects p ON p.id = i.project_id ORDER BY i.id DESC`).all();
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=facturas.csv');
+  res.send(toCSV(['id','project','number','amount','status','due_date','paid_date'], rows));
 });
 
 // ─── Telegram settings ──────────────────────────────────────────
