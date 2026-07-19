@@ -392,7 +392,14 @@ export default function ProjectDetail() {
       {tab === 'budget' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-            <button className="btn btn-primary" onClick={() => downloadBudgetPDF(project, lineItems, stages, bufferAmount)}>
+            <button className="btn btn-primary" onClick={() => {
+              try {
+                downloadBudgetPDF(project, lineItems, stages, bufferAmount);
+              } catch (e) {
+                console.error('PDF error:', e);
+                alert('Error generando PDF: ' + e.message);
+              }
+            }}>
               📄 Descargar PDF
             </button>
           </div>
