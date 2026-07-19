@@ -91,7 +91,14 @@ export default function Invoices() {
                     <td style={{ padding: '8px', fontSize: 13 }}>{inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '—'}</td>
                     <td style={{ padding: '8px' }}>
                       <div style={{ display: 'flex', gap: 4 }}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => downloadInvoicePDF(inv, { name: inv.project_name, client: inv.client })} title="Descargar PDF">
+                        <button className="btn btn-secondary btn-sm" onClick={async () => {
+                          try {
+                            const items = inv.project_id ? await api.getLineItems(inv.project_id) : [];
+                            await downloadInvoicePDF(inv, { name: inv.project_name, client: inv.client }, items);
+                          } catch (e) {
+                            alert('Error generando PDF: ' + e.message);
+                          }
+                        }} title="Descargar PDF">
                           <Download size={14} />
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setEditInv(inv)}><Edit2 size={14} /></button>
