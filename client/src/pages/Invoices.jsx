@@ -94,8 +94,10 @@ export default function Invoices() {
                         <button className="btn btn-secondary btn-sm" onClick={async () => {
                           try {
                             const items = inv.project_id ? await api.getLineItems(inv.project_id) : [];
+                            console.log('PDF invoice data:', { inv, project: { name: inv.project_name, client: inv.client }, items });
                             await downloadInvoicePDF(inv, { name: inv.project_name, client: inv.client }, items);
                           } catch (e) {
+                            console.error('PDF error details:', e);
                             alert('Error generando PDF: ' + e.message);
                           }
                         }} title="Descargar PDF">

@@ -172,7 +172,7 @@ export async function downloadInvoicePDF(invoice, project, lineItems = []) {
       bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
       columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 84 }, 2: { cellWidth: 28, halign: 'right' }, 3: { cellWidth: 22, halign: 'center' }, 4: { cellWidth: 32, halign: 'right' } },
     });
-    y = doc.lastAutoTable.finalY + 8;
+    y = (doc.lastAutoTable?.finalY || y + 20) + 8;
     // Summary (right-aligned) — calculated from line items
     const sx = 120;
     const lineSubtotal = lineItems.reduce((s, i) => s + (i.amount || 0), 0);
@@ -288,7 +288,7 @@ export async function downloadBudgetPDF(project, lineItems, stages, bufferAmount
       bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
       columnStyles: { 0: { cellWidth: 14 }, 1: { cellWidth: 110 }, 2: { cellWidth: 44 } },
     });
-    y = doc.lastAutoTable.finalY + 10;
+    y = (doc.lastAutoTable?.finalY || y + 20) + 10;
   }
 
   // Line items
@@ -315,7 +315,7 @@ export async function downloadBudgetPDF(project, lineItems, stages, bufferAmount
       bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
       columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 84 }, 2: { cellWidth: 28, halign: 'right' }, 3: { cellWidth: 22, halign: 'center' }, 4: { cellWidth: 32, halign: 'right' } },
     });
-    y = doc.lastAutoTable.finalY + 8;
+    y = (doc.lastAutoTable?.finalY || y + 20) + 8;
   }
 
   // Summary
