@@ -32,7 +32,7 @@ export default function Login() {
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{
             width: 48, height: 48, borderRadius: 12, margin: '0 auto 12px',
-            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+            background: 'linear-gradient(135deg, #818cf8, #6366f1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 800, fontSize: 22, color: 'white'
           }}>W</div>

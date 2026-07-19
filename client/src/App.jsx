@@ -70,7 +70,7 @@ export default function App() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 8px 20px' }}>
         <div style={{
           width: 36, height: 36, borderRadius: 10,
-          background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+          background: 'linear-gradient(135deg, #818cf8, #6366f1)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontWeight: 800, fontSize: 18, color: 'white'
         }}>W</div>
@@ -123,7 +123,7 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{
             width: 28, height: 28, borderRadius: 8,
-            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+            background: 'linear-gradient(135deg, #818cf8, #6366f1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 800, fontSize: 14, color: 'white'
           }}>W</div>
