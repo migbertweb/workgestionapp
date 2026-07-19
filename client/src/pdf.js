@@ -162,36 +162,35 @@ export async function downloadInvoicePDF(invoice, project, lineItems = []) {
       { content: `${i.hours || 0}`, styles: { halign: 'center' } },
       { content: money(i.amount), styles: { halign: 'right' } },
     ]);
+    const lineSubtotal = lineItems.reduce((s, i) => s + (i.amount || 0), 0);
+    const footRows = [
+      [{ content: 'Subtotal', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8 } },
+       { content: money(lineSubtotal), styles: { halign: 'right', fontStyle: 'bold', fontSize: 8 } }],
+    ];
+    if (Math.abs(lineSubtotal - (invoice.amount || 0)) > 0.01) {
+      footRows.push([
+        { content: 'Ajuste', colSpan: 4, styles: { halign: 'right', fontSize: 8 } },
+        { content: money((invoice.amount || 0) - lineSubtotal), styles: { halign: 'right', fontSize: 8 } },
+      ]);
+    }
+    footRows.push([
+      { content: 'TOTAL', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fontSize: 10 } },
+      { content: money(invoice.amount), styles: { halign: 'right', fontStyle: 'bold', fontSize: 10 } },
+    ]);
+
     autoTable(doc, {
       startY: y,
       head: [['#', 'Descripción', 'Precio', 'Cant (h)', 'Total']],
       body,
+      foot: footRows,
       theme: 'plain',
-      styles: { fontSize: 8, cellPadding: 5, textColor: T.ink },
-      headStyles: { textColor: T.teal, fontStyle: 'bold', fontSize: 8, fillColor: T.white },
+      margin: { left: M, right: M },
+      styles: { fontSize: 8, cellPadding: 4, textColor: T.ink },
+      headStyles: { textColor: T.teal, fontStyle: 'bold', fillColor: T.white },
       bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
-      columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 82 }, 2: { cellWidth: 26, halign: 'right' }, 3: { cellWidth: 20, halign: 'center' }, 4: { cellWidth: 34, halign: 'right' } },
+      footStyles: { fillColor: T.white, lineWidth: 0 },
     });
-    y = (doc.lastAutoTable?.finalY || y + 20) + 8;
-    // Summary (right-aligned) — calculated from line items
-    const sx = 120;
-    const lineSubtotal = lineItems.reduce((s, i) => s + (i.amount || 0), 0);
-    const summary = [
-      ['Subtotal', money(lineSubtotal)],
-    ];
-    if (Math.abs(lineSubtotal - (invoice.amount || 0)) > 0.01) {
-      summary.push(['Ajuste', money((invoice.amount || 0) - lineSubtotal)]);
-    }
-    summary.push(['Total', money(invoice.amount)]);
-    summary.forEach(([label, val], i) => {
-      const isLast = i === summary.length - 1;
-      doc.setTextColor(isLast ? T.ink : T.gray);
-      doc.setFontSize(isLast ? 12 : 9);
-      doc.setFont('helvetica', isLast ? 'bold' : 'normal');
-      doc.text(label, sx, y);
-      doc.text(val, rx, y, { align: 'right' });
-      y += isLast ? 10 : 6;
-    });
+    y = (doc.lastAutoTable?.finalY || y + 20) + 6;
   } else {
     y += 10;
     doc.setFontSize(10);
@@ -310,10 +309,10 @@ export async function downloadBudgetPDF(project, lineItems, stages, bufferAmount
       head: [['#', 'Descripción', 'Precio', 'Cant (h)', 'Total']],
       body,
       theme: 'plain',
+      margin: { left: M, right: M },
       styles: { fontSize: 8, cellPadding: 4, textColor: T.ink },
-      headStyles: { textColor: T.teal, fontStyle: 'bold', fontSize: 8, fillColor: T.white },
+      headStyles: { textColor: T.teal, fontStyle: 'bold', fillColor: T.white },
       bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
-      columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 80 }, 2: { cellWidth: 26, halign: 'right' }, 3: { cellWidth: 20, halign: 'center' }, 4: { cellWidth: 34, halign: 'right' } },
     });
     y = (doc.lastAutoTable?.finalY || y + 20) + 8;
   }
