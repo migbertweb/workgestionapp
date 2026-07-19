@@ -170,7 +170,7 @@ export async function downloadInvoicePDF(invoice, project, lineItems = []) {
       styles: { fontSize: 8, cellPadding: 5, textColor: T.ink },
       headStyles: { textColor: T.teal, fontStyle: 'bold', fontSize: 8, fillColor: T.white },
       bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
-      columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 84 }, 2: { cellWidth: 28, halign: 'right' }, 3: { cellWidth: 22, halign: 'center' }, 4: { cellWidth: 32, halign: 'right' } },
+      columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 80 }, 2: { cellWidth: 26, halign: 'right' }, 3: { cellWidth: 20, halign: 'center' }, 4: { cellWidth: 34, halign: 'right' } },
     });
     y = (doc.lastAutoTable?.finalY || y + 20) + 8;
     // Summary (right-aligned) — calculated from line items
@@ -313,7 +313,7 @@ export async function downloadBudgetPDF(project, lineItems, stages, bufferAmount
       styles: { fontSize: 8, cellPadding: 4, textColor: T.ink },
       headStyles: { textColor: T.teal, fontStyle: 'bold', fontSize: 8, fillColor: T.white },
       bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
-      columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 84 }, 2: { cellWidth: 28, halign: 'right' }, 3: { cellWidth: 22, halign: 'center' }, 4: { cellWidth: 32, halign: 'right' } },
+      columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 80 }, 2: { cellWidth: 26, halign: 'right' }, 3: { cellWidth: 20, halign: 'center' }, 4: { cellWidth: 34, halign: 'right' } },
     });
     y = (doc.lastAutoTable?.finalY || y + 20) + 8;
   }
