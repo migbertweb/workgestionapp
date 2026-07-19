@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { db, bootstrap } from './db.js';
 import { seedAdmin, requireAuth, authRoutes } from './auth.js';
+import { notify } from './notify.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -54,7 +55,7 @@ app.get('/api/projects/:id', (req, res) => {
   res.json(p);
 });
 
-app.post('/api/projects', (req, res) => {
+app.post('/api/projects', async (req, res) => {
   const { name, client, budget, buffer_percent, currency, deadline, description } = req.body;
   if (!name) return res.status(400).json({ message: 'Nombre requerido' });
   const now = new Date().toISOString();
@@ -68,7 +69,9 @@ app.post('/api/projects', (req, res) => {
   ['dev', 'design', 'pm', 'qa'].forEach(role => {
     db.prepare(`INSERT INTO project_rates (project_id, role, hourly_rate) VALUES (?,?,?)`).run(id, role, role === 'dev' ? 40 : role === 'design' ? 35 : role === 'pm' ? 30 : 25);
   });
-  res.status(201).json(db.prepare(`SELECT * FROM projects WHERE id = ?`).get(id));
+  const newProject = db.prepare(`SELECT * FROM projects WHERE id = ?`).get(id);
+  res.status(201).json(newProject);
+  await notify.projectCreated(newProject);
 });
 
 app.put('/api/projects/:id', (req, res) => {
@@ -123,12 +126,19 @@ app.post('/api/tasks', (req, res) => {
   res.status(201).json(db.prepare(`SELECT * FROM tasks WHERE id=?`).get(result.lastInsertRowid));
 });
 
-app.put('/api/tasks/:id', (req, res) => {
+app.put('/api/tasks/:id', async (req, res) => {
   const { stage_id, title, description, status, priority, position, estimated_hours, rate, category } = req.body;
   const now = new Date().toISOString();
+  const old = db.prepare(`SELECT * FROM tasks WHERE id=?`).get(req.params.id);
   db.prepare(`UPDATE tasks SET stage_id=COALESCE(?,stage_id), title=COALESCE(?,title), description=COALESCE(?,description), status=COALESCE(?,status), priority=COALESCE(?,priority), position=COALESCE(?,position), estimated_hours=COALESCE(?,estimated_hours), rate=COALESCE(?,rate), category=COALESCE(?,category), updated_at=? WHERE id=?`)
     .run(stage_id, title, description, status, priority, position, estimated_hours, rate, category, now, req.params.id);
-  res.json(db.prepare(`SELECT * FROM tasks WHERE id=?`).get(req.params.id));
+  const updated = db.prepare(`SELECT * FROM tasks WHERE id=?`).get(req.params.id);
+  res.json(updated);
+  // Notify on transition to done
+  if (status === 'done' && old.status !== 'done') {
+    const project = db.prepare(`SELECT name FROM projects WHERE id=?`).get(updated.project_id);
+    await notify.taskCompleted(updated, project?.name || 'Desconocido');
+  }
 });
 
 app.delete('/api/tasks/:id', (req, res) => {
@@ -335,6 +345,23 @@ app.get('/api/analytics', (req, res) => {
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(clientBuild, 'index.html'));
+});
+
+// ─── Telegram settings ──────────────────────────────────────────
+app.get('/api/settings/telegram', (req, res) => {
+  res.json({
+    enabled: notify.enabled(),
+    chatId: process.env.TELEGRAM_CHAT_ID ? '••••••' : null,
+  });
+});
+
+app.post('/api/settings/telegram', (req, res) => {
+  const { test } = req.body;
+  if (test) {
+    notify.send('🧪 <b>Test de WorkApp</b>\n¡Las notificaciones funcionan! 🎉');
+    return res.json({ ok: true, test: true });
+  }
+  res.json({ ok: false, message: 'Envía { test: true } para probar' });
 });
 
 const PORT = process.env.PORT || 3001;
