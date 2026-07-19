@@ -101,7 +101,7 @@ function clientSection(doc, title, rows, startY) {
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.text(title, M, y);
-  y += 2;
+  y += 5;
   rows.forEach(([label, value]) => {
     if (label) {
       doc.setTextColor(T.gray);
