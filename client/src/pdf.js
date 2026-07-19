@@ -2,157 +2,237 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
 const money = (n) => new Intl.NumberFormat('es-BR', { style: 'currency', currency: 'USD' }).format(n || 0);
+const C = { ink: [30, 41, 59], muted: [148, 163, 184], accent: [99, 102, 241], green: [34, 197, 94], red: [239, 68, 68], white: [255, 255, 255], light: [248, 250, 252] };
 
-function addHeader(doc) {
-  doc.setFillColor(99, 102, 241);
-  doc.rect(0, 0, 210, 30, 'F');
-  doc.setTextColor(255, 255, 255);
+function drawHeader(doc, title, subtitle) {
+  // Thin accent bar at top
+  doc.setFillColor(...C.accent);
+  doc.rect(0, 0, 210, 6, 'F');
+  // Logo + company name
+  doc.setFillColor(...C.accent);
+  doc.roundedRect(14, 14, 36, 14, 3, 3, 'F');
+  doc.setTextColor(...C.white);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text('WorkApp', 14, 20);
+  doc.setFontSize(11);
+  doc.text('WorkApp', 32, 23.5, { align: 'center' });
+  doc.setTextColor(...C.ink);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...C.muted);
+  doc.text('Freelance Project Manager', 14, 36);
+  // Title right-aligned
+  doc.setTextColor(...C.ink);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text(title, 196, 22, { align: 'right' });
+  if (subtitle) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...C.muted);
+    doc.text(subtitle, 196, 28, { align: 'right' });
+  }
+  // Separator line
+  doc.setDrawColor(...C.muted);
+  doc.setLineWidth(0.3);
+  doc.line(14, 44, 196, 44);
 }
 
-function addFooter(doc, page) {
-  doc.setFontSize(8);
-  doc.setTextColor(150);
-  doc.text(`Página ${page} · Generado el ${new Date().toLocaleDateString()}`, 14, 290);
+function drawFooter(doc, page) {
+  const y = 285;
+  doc.setDrawColor(...C.muted);
+  doc.setLineWidth(0.2);
+  doc.line(14, y, 196, y);
+  doc.setFontSize(7);
+  doc.setTextColor(...C.muted);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`WorkApp · Página ${page}`, 14, y + 6);
+  doc.text(`Generado: ${new Date().toLocaleDateString('es-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}`, 196, y + 6, { align: 'right' });
 }
+
+function drawInfoBox(doc, rows, startY) {
+  let y = startY;
+  doc.setDrawColor(...C.muted);
+  doc.setFillColor(...C.light);
+  doc.roundedRect(14, y, 182, rows.length * 7 + 10, 3, 3, 'FD');
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  rows.forEach(([label, value]) => {
+    doc.setFontSize(8);
+    doc.setTextColor(...C.muted);
+    doc.text(label, 22, y);
+    doc.setFontSize(9);
+    doc.setTextColor(...C.ink);
+    doc.text(value || '—', 22, y + 4);
+    y += 9;
+  });
+  return y + 6;
+}
+
+const tableStyles = {
+  theme: 'striped',
+  styles: { fontSize: 8, cellPadding: 4, lineColor: [220, 226, 233], lineWidth: 0.2 },
+  headStyles: { fillColor: C.accent, textColor: C.white, fontStyle: 'bold', fontSize: 8 },
+  bodyStyles: { textColor: C.ink },
+  alternateRowStyles: { fillColor: [245, 247, 250] },
+};
 
 // ─── Invoice PDF ────────────────────────────────────────────────
 export function downloadInvoicePDF(invoice, project, lineItems = []) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  let page = 1;
+  const page = 1;
+  const rows = [];
 
-  addHeader(doc);
-  doc.setTextColor(30, 41, 59);
+  drawHeader(doc, 'FACTURA', invoice.number || `#${invoice.id}`);
 
-  // Invoice info
-  doc.setFontSize(22);
+  const statusLabels = { draft: 'Borrador', sent: 'Enviada', paid: 'Pagada', overdue: 'Vencida' };
+  let y = drawInfoBox(doc, [
+    ['Proyecto', project?.name],
+    ['Cliente', project?.client],
+    ['Fecha emisión', invoice.created_at ? new Date(invoice.created_at).toLocaleDateString('es-BR') : '—'],
+    ['Vencimiento', invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('es-BR') : '—'],
+  ], 52);
+
+  // Status badge
+  const status = statusLabels[invoice.status] || invoice.status?.toUpperCase() || 'DRAFT';
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text(`FACTURA ${invoice.number || `#${invoice.id}`}`, 14, 50);
+  doc.setTextColor(...C.accent);
+  doc.text(`Estado: ${status}`, 14, y);
+  y += 10;
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Proyecto: ${project?.name || '—'}`, 14, 60);
-  doc.text(`Cliente: ${project?.client || '—'}`, 14, 66);
-  doc.text(`Fecha: ${new Date(invoice.created_at).toLocaleDateString()}`, 14, 72);
-  doc.text(`Vence: ${invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '—'}`, 14, 78);
-  doc.text(`Estado: ${invoice.status?.toUpperCase() || 'DRAFT'}`, 14, 84);
-
-  // Items table
+  // Items
   if (lineItems.length > 0) {
-    const rows = lineItems.map(i => [
+    const body = lineItems.map(i => [
       i.description || '—',
       i.category || '—',
-      `${i.hours || 0}h`,
-      money(i.rate),
-      money(i.amount),
+      { content: `${i.hours || 0}h`, styles: { halign: 'right' } },
+      { content: money(i.rate), styles: { halign: 'right' } },
+      { content: money(i.amount), styles: { halign: 'right' } },
     ]);
-    let y = 95;
+    body.push([
+      { content: 'TOTAL', colSpan: 4, styles: { fontStyle: 'bold', halign: 'right', fontSize: 9 } },
+      { content: money(invoice.amount), styles: { fontStyle: 'bold', fontSize: 9, halign: 'right' } },
+    ]);
     doc.autoTable({
       startY: y,
       head: [['Descripción', 'Cat', 'Horas', 'Tarifa', 'Monto']],
-      body: rows,
-      theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 3 },
-      headStyles: { fillColor: [30, 41, 59], textColor: 255 },
-      foot: [[{ content: 'TOTAL', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } }, { content: money(invoice.amount), styles: { fontStyle: 'bold' } }]],
+      body,
+      ...tableStyles,
+      columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 24 }, 2: { cellWidth: 24 }, 3: { cellWidth: 32 }, 4: { cellWidth: 32 } },
     });
-    y = doc.lastAutoTable.finalY + 10;
-
-    // Notes
-    if (invoice.notes) {
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'italic');
-      doc.text('Notas:', 14, y);
-      doc.text(invoice.notes, 14, y + 5);
-    }
+    y = doc.lastAutoTable.finalY + 12;
   } else {
-    // Just total
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Total: ${money(invoice.amount)}`, 14, 100);
+    doc.setTextColor(...C.ink);
+    doc.text(`Total: ${money(invoice.amount)}`, 14, y + 5);
+    y += 20;
   }
 
-  addFooter(doc, page);
+  // Notes
+  if (invoice.notes) {
+    doc.setFontSize(8);
+    doc.setTextColor(...C.muted);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Notas:', 14, y);
+    doc.text(invoice.notes, 14, y + 5, { maxWidth: 182 });
+  }
+
+  drawFooter(doc, page);
   doc.save(`factura-${invoice.number || invoice.id}.pdf`);
 }
 
 // ─── Budget PDF ─────────────────────────────────────────────────
 export function downloadBudgetPDF(project, lineItems, stages, bufferAmount) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const page = 1;
 
-  addHeader(doc);
-  doc.setTextColor(30, 41, 59);
+  drawHeader(doc, 'PRESUPUESTO', project?.name);
 
-  doc.setFontSize(22);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`PRESUPUESTO`, 14, 50);
+  let y = drawInfoBox(doc, [
+    ['Proyecto', project?.name],
+    ['Cliente', project?.client],
+    ['Moneda', project?.currency || 'USD'],
+    ['Deadline', project?.deadline || 'No definido'],
+  ], 52);
 
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Proyecto: ${project?.name || '—'}`, 14, 60);
-  doc.text(`Cliente: ${project?.client || '—'}`, 14, 66);
-  doc.text(`Moneda: ${project?.currency || 'USD'}`, 14, 72);
-
-  let y = 82;
-
-  // Stages summary
+  // Stages
   if (stages && stages.length > 0) {
-    doc.setFontSize(13);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('Etapas', 14, y);
-    y += 8;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    stages.forEach(s => {
-      doc.text(`• ${s.name} — ${s.status}`, 14, y);
-      y += 6;
-    });
-    y += 4;
-  }
-
-  // Line items
-  if (lineItems.length > 0) {
-    const rows = lineItems.map(i => [
-      i.description || '—',
-      i.category || '—',
-      `${i.hours || 0}h`,
-      money(i.rate),
-      money(i.amount),
+    doc.setTextColor(...C.ink);
+    doc.text('Etapas del proyecto', 14, y);
+    y += 6;
+    const stageBody = stages.map(s => [
+      s.name,
+      s.status === 'done' ? '✓ Completada' : s.status === 'progress' ? '◷ En progreso' : s.status === 'review' ? '○ Revisión' : '— Pendiente',
     ]);
     doc.autoTable({
       startY: y,
-      head: [['Descripción', 'Cat', 'Horas', 'Tarifa', 'Monto']],
-      body: rows,
-      theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 3 },
-      headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+      head: [['Etapa', 'Estado']],
+      body: stageBody,
+      ...tableStyles,
+      columnStyles: { 0: { cellWidth: 100 }, 1: { cellWidth: 72 } },
     });
     y = doc.lastAutoTable.finalY + 10;
   }
 
+  // Line items
+  if (lineItems.length > 0) {
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...C.ink);
+    doc.text('Desglose de costos', 14, y);
+    y += 6;
+    const body = lineItems.map(i => [
+      i.description || '—',
+      i.category || '—',
+      { content: `${i.hours || 0}h`, styles: { halign: 'right' } },
+      { content: money(i.rate), styles: { halign: 'right' } },
+      { content: money(i.amount), styles: { halign: 'right' } },
+    ]);
+    doc.autoTable({
+      startY: y,
+      head: [['Descripción', 'Cat', 'Horas', 'Tarifa', 'Monto']],
+      body,
+      ...tableStyles,
+      columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 24 }, 2: { cellWidth: 24 }, 3: { cellWidth: 32 }, 4: { cellWidth: 32 } },
+    });
+    y = doc.lastAutoTable.finalY + 10;
+  }
+
+  // Summary box
   const totalCost = lineItems.reduce((s, i) => s + (i.amount || 0), 0);
   const budget = project?.budget || 0;
   const total = budget + (bufferAmount || 0);
   const margin = total - totalCost;
 
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Resumen financiero', 14, y);
-  y += 8;
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Presupuesto base:          ${money(budget)}`, 14, y); y += 6;
-  doc.text(`Buffer (${project?.buffer_percent || 20}%):        ${money(bufferAmount || 0)}`, 14, y); y += 6;
-  doc.setTextColor(34, 197, 94);
-  doc.text(`Total presupuesto:         ${money(total)}`, 14, y); y += 6;
-  doc.setTextColor(239, 68, 68);
-  doc.text(`Costo real:                ${money(totalCost)}`, 14, y); y += 6;
-  doc.setTextColor(margin >= 0 ? 34 : 239, margin >= 0 ? 197 : 68, margin >= 0 ? 94 : 68);
   doc.setFont('helvetica', 'bold');
-  doc.text(`Margen:                    ${money(margin)}`, 14, y);
+  doc.setTextColor(...C.ink);
+  doc.text('Resumen financiero', 14, y);
+  y += 6;
 
-  addFooter(doc, 1);
+  const summary = [
+    ['Presupuesto base', money(budget), C.ink],
+    [`Buffer (${project?.buffer_percent || 20}%)`, money(bufferAmount || 0), C.ink],
+    ['Total presupuesto', money(total), C.green],
+    ['Costo real', money(totalCost), C.red],
+    ['Margen', money(margin), margin >= 0 ? C.green : C.red],
+  ];
+
+  const sBody = summary.map(([label, value, color]) => [
+    { content: label, styles: { fontStyle: 'bold' } },
+    { content: value, styles: { halign: 'right', textColor: color } },
+  ]);
+
+  doc.autoTable({
+    startY: y,
+    body: sBody,
+    ...tableStyles,
+    columnStyles: { 0: { cellWidth: 120 }, 1: { cellWidth: 52 } },
+  });
+
+  drawFooter(doc, page);
   doc.save(`presupuesto-${project?.name || 'proyecto'}.pdf`);
 }
