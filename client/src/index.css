@@ -67,7 +67,7 @@ body {
   font-size: 14px;
   cursor: pointer;
   border: none;
-  transition: all 0.15s;
+  transition: background-color 0.15s, color 0.15s;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -216,7 +216,7 @@ select.input {
   text-decoration: none;
   font-weight: 500;
   font-size: 14px;
-  transition: all 0.15s;
+  transition: background-color 0.15s, color 0.15s;
 }
 .sidebar-link:hover { background: var(--surface); color: var(--text); }
 .sidebar-link.active { background: var(--accent); color: white; }
@@ -248,11 +248,10 @@ select.input {
   border-radius: 12px;
   padding: 20px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background-color 0.15s, color 0.15s;
 }
 .project-card:hover {
   border-color: var(--accent);
-  transform: translateY(-2px);
 }
 
 .progress-bar {
