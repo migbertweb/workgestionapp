@@ -282,10 +282,10 @@ export async function downloadBudgetPDF(project, lineItems, stages, bufferAmount
       head: [['#', 'Etapa', 'Estado']],
       body: stageBody,
       theme: 'plain',
+      margin: { left: M, right: M },
       styles: { fontSize: 8, cellPadding: 4, textColor: T.ink },
-      headStyles: { textColor: T.teal, fontStyle: 'bold', fontSize: 8, fillColor: T.white },
+      headStyles: { textColor: T.teal, fontStyle: 'bold', fillColor: T.white },
       bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
-      columnStyles: { 0: { cellWidth: 14 }, 1: { cellWidth: 110 }, 2: { cellWidth: 44 } },
     });
     y = (doc.lastAutoTable?.finalY || y + 20) + 10;
   }
@@ -317,38 +317,42 @@ export async function downloadBudgetPDF(project, lineItems, stages, bufferAmount
     y = (doc.lastAutoTable?.finalY || y + 20) + 8;
   }
 
-  // Summary
+  // Summary table
   const totalCost = lineItems.reduce((s, i) => s + (i.amount || 0), 0);
   const budget = project?.budget || 0;
   const total = budget + (bufferAmount || 0);
   const margin = total - totalCost;
-  const sx = 120;
 
-  const summary = [
-    ['Presupuesto base', money(budget), T.gray],
-    [`Buffer (${project?.buffer_percent || 20}%)`, money(bufferAmount || 0), T.gray],
-    ['Subtotal', money(total), T.ink],
-    ['Costo real', money(totalCost), T.red],
-    ['Margen', money(margin), margin >= 0 ? T.green : T.red],
-  ];
-  summary.forEach(([label, val, color]) => {
-    doc.setTextColor(color);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(label, sx, y);
-    doc.text(val, rx, y, { align: 'right' });
-    y += 6;
-  });
-  y += 2;
-  doc.setDrawColor(T.teal);
-  doc.setLineWidth(0.5);
-  doc.line(sx, y, rx, y);
-  y += 7;
-  doc.setTextColor(T.ink);
-  doc.setFontSize(12);
+  doc.setTextColor(T.teal);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('Total presupuesto', sx, y);
-  doc.text(money(total), rx, y, { align: 'right' });
+  doc.text('Resumen financiero', M, y);
+  y += 7;
+
+  const summaryBody = [
+    [{ content: 'Presupuesto base', styles: { fontStyle: 'bold' } },
+     { content: money(budget), styles: { halign: 'right' } }],
+    [{ content: `Buffer (${project?.buffer_percent || 20}%)`, styles: { fontStyle: 'bold' } },
+     { content: money(bufferAmount || 0), styles: { halign: 'right' } }],
+    [{ content: 'Subtotal', styles: { fontStyle: 'bold' } },
+     { content: money(total), styles: { halign: 'right', textColor: T.green } }],
+    [{ content: 'Costo real', styles: { fontStyle: 'bold' } },
+     { content: money(totalCost), styles: { halign: 'right', textColor: T.red } }],
+    [{ content: 'Margen', styles: { fontStyle: 'bold' } },
+     { content: money(margin), styles: { halign: 'right', textColor: margin >= 0 ? T.green : T.red } }],
+    [{ content: 'TOTAL PRESUPUESTO', styles: { fontStyle: 'bold', fontSize: 10 } },
+     { content: money(total), styles: { halign: 'right', fontStyle: 'bold', fontSize: 10, textColor: T.teal } }],
+  ];
+
+  autoTable(doc, {
+    startY: y,
+    body: summaryBody,
+    theme: 'plain',
+    margin: { left: M, right: M },
+    styles: { fontSize: 8, cellPadding: 4, textColor: T.ink },
+    bodyStyles: { lineColor: T.light, lineWidth: 0.2 },
+  });
+  y = (doc.lastAutoTable?.finalY || y + 20) + 6;
 
   // Validity note (single line, compact)
   y = Math.max(y + 10, 220);
