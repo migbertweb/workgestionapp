@@ -173,9 +173,16 @@ export async function downloadInvoicePDF(invoice, project, lineItems = []) {
       columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 84 }, 2: { cellWidth: 28, halign: 'right' }, 3: { cellWidth: 22, halign: 'center' }, 4: { cellWidth: 32, halign: 'right' } },
     });
     y = doc.lastAutoTable.finalY + 8;
-    // Summary (right-aligned)
+    // Summary (right-aligned) — calculated from line items
     const sx = 120;
-    const summary = [['Subtotal', money(invoice.amount)], ['Total', money(invoice.amount)]];
+    const lineSubtotal = lineItems.reduce((s, i) => s + (i.amount || 0), 0);
+    const summary = [
+      ['Subtotal', money(lineSubtotal)],
+    ];
+    if (Math.abs(lineSubtotal - (invoice.amount || 0)) > 0.01) {
+      summary.push(['Ajuste', money((invoice.amount || 0) - lineSubtotal)]);
+    }
+    summary.push(['Total', money(invoice.amount)]);
     summary.forEach(([label, val], i) => {
       const isLast = i === summary.length - 1;
       doc.setTextColor(isLast ? T.ink : T.gray);
