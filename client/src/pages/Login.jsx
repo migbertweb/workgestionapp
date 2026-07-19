@@ -30,12 +30,7 @@ export default function Login() {
         padding: 40, width: '100%', maxWidth: 400
       }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: 12, margin: '0 auto 12px',
-            background: 'linear-gradient(135deg, #818cf8, #6366f1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 800, fontSize: 22, color: 'white'
-          }}>W</div>
+          <img src="/logo.png" alt="WorkApp" style={{ width: 48, height: 48, borderRadius: 10, margin: '0 auto 12px', display: 'block' }} />
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 4px' }}>WorkApp</h1>
           <p style={{ color: 'var(--muted)', fontSize: 14, margin: 0 }}>Iniciá sesión para continuar</p>
         </div>
