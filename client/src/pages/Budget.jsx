@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, Calculator, Printer } from 'lucide-react';
+import { Plus, Trash2, FileText, Calculator, Download } from 'lucide-react';
 import { api } from '../api.js';
 import Modal from '../components/Modal.jsx';
 import { ROLE_NAMES } from '../roles.js';
+import { downloadBudgetPDF } from '../pdf.js';
 
 const money = (n) => new Intl.NumberFormat('es-BR', { style: 'currency', currency: 'USD' }).format(n || 0);
 
@@ -74,8 +75,15 @@ export default function Budget() {
       <h1 style={{ fontSize: 28, fontWeight: 800, margin: '0 0 4px' }}>Presupuestos</h1>
       <p style={{ color: 'var(--muted)', marginBottom: 24 }}>Gestión administrativa: costos, tarifas, asunciones y márgenes.</p>
       {selected && (
-        <button className="btn btn-secondary" onClick={() => window.print()} style={{ marginBottom: 16 }}>
-          <Printer size={16} /> Exportar PDF / Imprimir
+        <button className="btn btn-primary" onClick={async () => {
+          try {
+            const stages = await api.getStages(selectedId);
+            downloadBudgetPDF(selected, lineItems, stages, bufferAmount);
+          } catch (e) {
+            alert('Error generando PDF: ' + e.message);
+          }
+        }} style={{ marginBottom: 16 }}>
+          <Download size={16} /> Exportar PDF
         </button>
       )}
 
