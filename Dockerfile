@@ -29,6 +29,7 @@ COPY server.js ./
 COPY db.js ./
 COPY auth.js ./
 COPY notify.js ./
+COPY activity.js ./
 
 # Create data dir for SQLite
 RUN mkdir -p /app/data && chown -R node:node /app

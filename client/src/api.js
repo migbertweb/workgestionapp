@@ -81,4 +81,8 @@ export const api = {
   // Analytics
   getAnalytics: () => request('/analytics'),
   getMarketRates: () => request('/market_rates'),
+
+  // Activity
+  getActivity: (limit) => request(`/activity?limit=${limit || 30}`),
+  getProjectActivity: (projectId) => request(`/projects/${projectId}/activity`),
 };
